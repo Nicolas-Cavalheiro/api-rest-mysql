@@ -27,3 +27,55 @@ app.post('/', async (req, res) => {
 
         
 });
+
+app.get("/", async (req, res) => {
+    try {
+        const [rows] = await pool.query("SELECT * FROM usuarios");
+        res.json(rows);
+    } catch (e){
+        res.status(500).json({ erro: "Falha ao listar usuários"});
+    }
+});
+
+app.put("/:id", async (req, res) => {
+    try {
+        const {id} = req.params;
+        const {nome, email} = req.body;
+
+        const [result] = await pool.query(
+            "UPDATE usuarios SET nome = COALESCE (?, nome), email = COALESCE (?, email) WHERE id = ?",
+            [nome || null, email || null, id]
+        );
+
+        if (!result.affectRows){
+            return res.status(404).json({ erro: "Usuário não encontrado"});
+        }
+
+        res.json({ mensagem: "Atualizado com sucesso" });
+    } catch (e){
+        res.status(500).json({ erro: "Falha ao atualizar o usuário"});
+    }
+});
+
+app.delete("/:id", async(req, res) => {
+    try {
+        const {id} = req.params;
+
+        const [result] = await pool.query(
+            "DELETE FROM usuarios WHERE id = ?",
+            [id]
+        );
+
+        if (!result.affectedRows){
+            return res.status(404).json({ erro: "Usuário não encontrado"});
+        }
+
+        res.json({ mensagem: "Deletado com sucesso" });
+    } catch (e){
+        res.status(500).json({ erro: "Falha ao deletar usuário" });
+    }
+});
+
+app.listen(PORT, ()=> {
+    console.log(`Servidor MySql rodando em http://localhost:${PORT}`);
+});
